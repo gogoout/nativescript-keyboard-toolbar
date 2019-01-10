@@ -1,6 +1,6 @@
 import { android as AndroidApp } from "tns-core-modules/application";
 import { screen } from "tns-core-modules/platform";
-import { View } from "tns-core-modules/ui/core/view";
+import {View, ViewBase} from 'tns-core-modules/ui/core/view';
 import { AnimationCurve } from "tns-core-modules/ui/enums";
 import { topmost } from "tns-core-modules/ui/frame";
 import { ad } from "tns-core-modules/utils/utils";
@@ -20,32 +20,45 @@ export class Toolbar extends ToolbarBase {
     this.verticalAlignment = "top"; // weird but true
   }
 
+  // gogoout edit, we have save issue on android
+  // depending on the framework (looking at you, Angular!) it may take longer to find the view, so here we try to get it asap (instead of a fixed 1sec timeout for instance)
+  private getViewForId(attemptsLeft: number): Promise<ViewBase> {
+      return new Promise<ViewBase>((resolve, reject) => {
+          if (attemptsLeft-- > 0) {
+              setTimeout(() => {
+                  const page = topmost().currentPage;
+                  const found = <View>page.getViewById(this.forId);
+                  if (found) {
+                      resolve(found);
+                  } else {
+                      this.getViewForId(attemptsLeft).then(resolve).catch(reject);
+                  }
+              }, 200);
+          } else {
+              reject();
+          }
+      });
+  }
+
   protected _loaded(): void {
     setTimeout(() => this.applyInitialPosition());
 
-    setTimeout(() => {
-      const page = topmost().currentPage;
-      const forView = <View>page.getViewById(this.forId);
+      this.getViewForId(10)
+          .then(view => {
+              const parent = <View>this.content.parent;
+              view.on("focus", () => {
+                  this.hasFocus = true;
+                  if (that.lastKeyboardHeight) {
+                      this.showToolbar(parent);
+                  }
+              });
 
-      if (!forView) {
-        console.log(`\n⌨ ⌨ ⌨ Please make sure forId="<view id>" resolves to a visible view, or the toolbar won't render correctly! Example: <Toolbar forId="myId" height="44">\n\n`);
-        return;
-      }
-
-      const parent = <View>this.content.parent;
-
-      forView.on("focus", () => {
-        this.hasFocus = true;
-        if (that.lastKeyboardHeight) {
-          this.showToolbar(parent);
-        }
-      });
-
-      forView.on("blur", () => {
-        this.hasFocus = false;
-        this.hideToolbar(parent);
-      });
-    }, 500);
+              view.on("blur", () => {
+                  this.hasFocus = false;
+                  this.hideToolbar(parent);
+              });
+          })
+          .catch(() => console.log(`\n⌨ ⌨ ⌨ Please make sure forId="<view id>" resolves to a visible view, or the toolbar won't render correctly! Example: <Toolbar forId="myId" height="44">\n\n`));
 
     const that = this;
 

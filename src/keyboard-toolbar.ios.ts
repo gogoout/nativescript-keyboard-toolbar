@@ -2,6 +2,7 @@ import * as application from "tns-core-modules/application";
 import { screen } from "tns-core-modules/platform";
 import { View, ViewBase } from "tns-core-modules/ui/core/view";
 import { EditableTextBase } from "tns-core-modules/ui/editable-text-base";
+import { SearchBar } from "tns-core-modules/ui/search-bar";
 import { AnimationCurve } from "tns-core-modules/ui/enums";
 import { topmost } from "tns-core-modules/ui/frame";
 import { ToolbarBase } from "./keyboard-toolbar.common";
@@ -37,7 +38,8 @@ export class Toolbar extends ToolbarBase {
       const parent = this.content.parent as View;
 
       // experimental support for non-text widgets.. but not sure if this is useful, so not documenting it yet
-      const isText = forView instanceof EditableTextBase;
+        // gogoout edit here, we have custom support for focus and blur for searchbar
+      const isText = (forView instanceof EditableTextBase) || (forView instanceof SearchBar);
 
       const hasIQKeyboardManagerInstalled = typeof(IQKeyboardManager) !== "undefined";
       const iqKeyboardManagerOriginalDistance = hasIQKeyboardManagerInstalled ? IQKeyboardManager.sharedManager().keyboardDistanceFromTextField : 0;
