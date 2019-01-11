@@ -41,8 +41,7 @@ export class Toolbar extends ToolbarBase {
   }
 
   protected _loaded(): void {
-    setTimeout(() => this.applyInitialPosition());
-
+      setTimeout(() => this.applyInitialPosition());
       this.getViewForId(10)
           .then(view => {
               const parent = <View>this.content.parent;
@@ -114,7 +113,7 @@ export class Toolbar extends ToolbarBase {
   }
 
   private showToolbar(parent): void {
-    const animateToY = this.startPositionY - this.lastKeyboardHeight - (this.showWhenKeyboardHidden === true ? 0 : (this.lastHeight / screen.mainScreen.scale)) - (this.isNavbarVisible ? 0 : this.navbarHeight);
+    const animateToY = this.startPositionY - this.lastKeyboardHeight - (this.showWhenKeyboardHidden === true ? 0 : (this.lastHeight / screen.mainScreen.scale));
     // console.log(">> showToolbar, animateToY: " + animateToY);
     parent.animate({
       translate: {x: 0, y: animateToY},
@@ -143,17 +142,12 @@ export class Toolbar extends ToolbarBase {
     const parent = <View>this.content.parent;
 
     // at this point, topmost().currentPage is null, so do it like this:
-    let page: any = parent;
-    while (!page && !page.frame) {
-      page = page.parent;
-    }
-
     const {y} = parent.getLocationOnScreen();
     const newHeight = parent.getMeasuredHeight();
 
     // this is the bottom navbar - which may be hidden by the user.. so figure out its actual height
-    this.isNavbarVisible = page.getMeasuredHeight() < Toolbar.getUsableScreenSizeY();
-    this.navbarHeight = Toolbar.getNavbarHeight();
+      this.isNavbarVisible = Toolbar.isNavbarShowed();
+      this.navbarHeight = Toolbar.getNavbarHeight();
 
     this.startPositionY = screen.mainScreen.heightDIPs - y - ((this.showWhenKeyboardHidden === true ? newHeight : 0) / screen.mainScreen.scale) - (this.isNavbarVisible ? this.navbarHeight : 0);
 
@@ -170,6 +164,14 @@ export class Toolbar extends ToolbarBase {
       parent.translateY = this.startPositionY;
     }
     this.lastHeight = newHeight;
+  }
+  private static isNavbarShowed(){
+      const resources = (<android.content.Context>ad.getApplicationContext()).getResources();
+      const resourceId = resources.getIdentifier("config_showNavigationBar", "bool", "android")
+      if (resourceId > 0) {
+          return resources.getBoolean(resourceId);
+      }
+      return false;
   }
 
   private static getNavbarHeight() {
